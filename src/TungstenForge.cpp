@@ -100,7 +100,7 @@ namespace wForge
         }
     }
 
-    bool TungstenForge::BuildProject(const std::filesystem::path& projectPath, const std::filesystem::path& tungstenCoreSourceDir, const std::filesystem::path& outputIntDir, std::filesystem::path& outputBuildDir)
+    bool TungstenForge::BuildProject(const std::filesystem::path& projectPath, const std::filesystem::path& tungstenCoreSourceDir, const std::filesystem::path& outputIntDir, const std::filesystem::path& outputBuildDir)
     {
         namespace fs = std::filesystem;
 
@@ -149,7 +149,7 @@ namespace wForge
             fs::create_directory(outputIntDir / "Intermediate/build");
             fs::create_directory(outputBuildDir / "Build");
 
-            const fs::path projectDir = projectFilePath.parent_path();
+            const fs::path projectDir = projectFilePath->parent_path();
             const std::string projectDirStr = fs::weakly_canonical(projectDir).string();
             const std::string tungstenCoreSourceDirStr = fs::weakly_canonical(tungstenCoreSourceDir).string();
 

@@ -28,11 +28,11 @@ configure_file(
 )
 
 # Add Rapid YAML
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidyaml)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidlyaml)
 # Add TungstenUtils
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenUtils)
 
-add_library(TungstenForgeu
+add_library(TungstenForge
     include/TungstenForge/TungstenForge.hpp
     src/TungstenForge.cpp
 )

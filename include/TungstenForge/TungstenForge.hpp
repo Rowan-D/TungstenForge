@@ -13,7 +13,7 @@ namespace wForge
         TungstenForge();
 
         std::optional<std::filesystem::path> GetProjectFilePath(const std::filesystem::path& inputPath);
-        bool BuildProject(const std::filesystem::path& projectPath, const std::filesystem::path& tungstenCoreSourceDir, const std::filesystem::path& outputIntDir, std::filesystem::path& outputBuildDir);
+        bool BuildProject(const std::filesystem::path& projectPath, const std::filesystem::path& tungstenCoreSourceDir, const std::filesystem::path& outputIntDir, const std::filesystem::path& outputBuildDir);
 
         wUtils::TungstenLogger errorList;
 
