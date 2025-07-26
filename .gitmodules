@@ -1,0 +1,6 @@
+[submodule "external/rapidlyaml"]
+	path = external/rapidlyaml
+	url = https://github.com/biojppm/rapidyaml.git
+[submodule "external/TungstenUtils"]
+	path = external/TungstenUtils
+	url = https://github.com/Rowan-D/TungstenUtils.git
