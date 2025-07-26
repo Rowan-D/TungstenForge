@@ -28,15 +28,9 @@ configure_file(
 )
 
 # Add Rapid YAML
-<<<<<<< HEAD
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidyaml)
-# Add TungstenForge
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenForge)
-=======
-add_subdirectory(external/rapidyaml)
 # Add TungstenUtils
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenUtils)
->>>>>>> beb10a2d07cde459a951ab49c3b8de6c1dde44bb
 
 add_library(TungstenForgeu
     include/TungstenForge/TungstenForge.hpp
@@ -53,6 +47,10 @@ target_compile_features(TungstenForge PUBLIC cxx_std_20)
 
 target_link_libraries(TungstenForge PRIVATE ryml)
 target_link_libraries(TungstenForge PUBLIC TungstenUtils)
+
+set_target_properties(TungstenForge PROPERTIES
+    VERSION ${PROJECT_VERSION}
+)
 
 # Installation logic
 include(GNUInstallDirs)
