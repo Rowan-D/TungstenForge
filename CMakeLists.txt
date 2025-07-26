@@ -21,9 +21,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
 # Add Rapid YAML
-add_subdirectory(external/rapidyaml)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidyaml)
 # Add TungstenForge
-add_subdirectory(external/TungstenForge)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenForge)
 
 add_library(TungstenForge
     include/TungstenForge/TungstenForge.hpp
