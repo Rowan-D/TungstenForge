@@ -6,7 +6,7 @@ string(REPLACE "." ";" TUNGSTENFORGE_VERSION_LIST ${TUNGSTENFORGE_VERSION})
 
 list(LENGTH TUNGSTENFORGE_VERSION_LIST _ver_len)
 if(NOT _ver_len EQUAL 3)
-    message(FATAL_ERROR "VERSION file contains unknown format expected: MAJOR.MINOR.PATCH")
+    message(FATAL_ERROR "VERSION file contains unknown format; expected: MAJOR.MINOR.PATCH")
 endif()
 
 list(GET TUNGSTENFORGE_VERSION_LIST 0 TUNGSTENFORGE_VERSION_MAJOR)
@@ -15,24 +15,95 @@ list(GET TUNGSTENFORGE_VERSION_LIST 2 TUNGSTENFORGE_VERSION_PATCH)
 
 project(TungstenForge VERSION ${TUNGSTENFORGE_VERSION} LANGUAGES CXX)
 
+message(STATUS "TungstenForge version: ${PROJECT_VERSION}")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/TungstenForge/Version.hpp
+    @ONLY
+)
+
 # Add Rapid YAML
+<<<<<<< HEAD
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidyaml)
 # Add TungstenForge
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenForge)
+=======
+add_subdirectory(external/rapidyaml)
+# Add TungstenUtils
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenUtils)
+>>>>>>> beb10a2d07cde459a951ab49c3b8de6c1dde44bb
 
-add_library(TungstenForge
+add_library(TungstenForgeu
     include/TungstenForge/TungstenForge.hpp
     src/TungstenForge.cpp
 )
 
 target_include_directories(TungstenForge PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
+
+target_compile_features(TungstenForge PUBLIC cxx_std_20)
 
 target_link_libraries(TungstenForge PRIVATE ryml)
 target_link_libraries(TungstenForge PUBLIC TungstenUtils)
+
+# Installation logic
+include(GNUInstallDirs)
+
+install(TARGETS TungstenForge
+        EXPORT TungstenForgeTargets
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/include/TungstenForge/Version.hpp"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/TungstenForge
+)
+
+install(EXPORT TungstenForgeTargets
+        FILE TungstenForgeTargets.cmake
+        NAMESPACE Tungsten::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfigVersion.cmake"
+    VERSION ${TUNGSTENFORGE_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/CMake/TungstenForgeConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge
+)
+
+# Uninstall logic. Only defined if this is the top-level project.
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY
+    )
+
+    add_custom_target(uninstall
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
+    )
+endif()
