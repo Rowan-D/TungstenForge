@@ -105,9 +105,11 @@ namespace wForge
         namespace fs = std::filesystem;
 
         W_LOG_INFO(errorList, "Build called.");
-        W_LOG_INFO(errorList, "Project path: {}", projectPath.string());
-        W_LOG_INFO(errorList, "Output Intermediate Directory: {}", outputIntDir.string());
-        W_LOG_INFO(errorList, "Output Build Directory: {}", outputBuildDir.string());
+
+        W_LOG_INFO(errorList, "projectPath: {}", projectPath.string());
+        W_LOG_INFO(errorList, "wCoreSourceDir: {}", tungstenCoreSourceDir.string());
+        W_LOG_INFO(errorList, "intDir: {}", outputIntDir.string());
+        W_LOG_INFO(errorList, "buildDir: {}", outputBuildDir.string());
 
         try
         {

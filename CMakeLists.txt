@@ -17,6 +17,9 @@ project(TungstenForge VERSION ${TUNGSTENFORGE_VERSION} LANGUAGES CXX)
 
 message(STATUS "TungstenForge version: ${PROJECT_VERSION}")
 
+option(TUNGSTENFORGE_INSTALL_LIBRARY "Install library, headers, and CMake config" OFF)
+option(TUNGSTENFORGE_INSTALL_RES "Install resource directory (wforge/res/)" ON)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
@@ -27,12 +30,23 @@ configure_file(
     @ONLY
 )
 
+include(GNUInstallDirs)
+
+set(TUNGSTENFORGE_RESOURCE_PATH "${CMAKE_INSTALL_FULL_DATADIR}/wforge/res")
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Config.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/TungstenForge/Config.hpp
+    @ONLY
+)
+
 # Add Rapid YAML
+set(RYML_INSTALL OFF CACHE BOOL "Disable install target for rapidyaml")
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidlyaml)
 # Add TungstenUtils
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenUtils)
 
-add_library(TungstenForge
+add_library(TungstenForge STATIC
     include/TungstenForge/TungstenForge.hpp
     src/TungstenForge.cpp
 )
@@ -45,53 +59,62 @@ target_include_directories(TungstenForge PUBLIC
 
 target_compile_features(TungstenForge PUBLIC cxx_std_20)
 
-target_link_libraries(TungstenForge PRIVATE ryml)
-target_link_libraries(TungstenForge PUBLIC TungstenUtils)
+target_link_libraries(TungstenForge
+    PUBLIC TungstenUtils
+    PRIVATE ryml
+)
 
 set_target_properties(TungstenForge PROPERTIES
     VERSION ${PROJECT_VERSION}
 )
 
 # Installation logic
-include(GNUInstallDirs)
+if(TUNGSTENFORGE_ENABLE_INSTALL)
+    install(TARGETS TungstenForge
+            EXPORT TungstenForgeTargets
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(TARGETS TungstenForge
-        EXPORT TungstenForgeTargets
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/include/TungstenForge/Version.hpp"
+        "${CMAKE_CURRENT_BINARY_DIR}/include/TungstenForge/Config.hpp"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/TungstenForge
+    )
 
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/include/TungstenForge/Version.hpp"
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/TungstenForge
-)
+    install(EXPORT TungstenForgeTargets
+            FILE TungstenForgeTargets.cmake
+            NAMESPACE Tungsten::
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge)
 
-install(EXPORT TungstenForgeTargets
-        FILE TungstenForgeTargets.cmake
-        NAMESPACE Tungsten::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge)
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfigVersion.cmake"
+        VERSION ${TUNGSTENFORGE_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
 
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfigVersion.cmake"
-    VERSION ${TUNGSTENFORGE_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
+    configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/TungstenForgeConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge
+    )
 
-configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/CMake/TungstenForgeConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge
-)
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge
+    )
+endif()
 
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/TungstenForgeConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TungstenForge
-)
+# Install runtime resources if enabled
+if(TUNGSTENFORGE_INSTALL_RES)
+    install(DIRECTORY res/
+            DESTINATION ${TUNGSTENFORGE_RESOURCE_PATH})
+endif()
 
 # Uninstall logic. Only defined if this is the top-level project.
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
