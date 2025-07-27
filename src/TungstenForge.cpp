@@ -8,6 +8,7 @@
 #include "TungstenUtils/ReadFile.hpp"
 #include "TungstenUtils/WriteFile.hpp"
 #include "TungstenUtils/FindAndReplace.hpp"
+#include "TungstenForge/Config.hpp"
 
 namespace wForge
 {
@@ -146,7 +147,10 @@ namespace wForge
 
             fs::create_directory(outputIntDir / "Intermediate");
 
-            fs::copy("res/TungstenRuntime", outputIntDir / "Intermediate/TungstenRuntime", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+            const std::filesystem::path tungstenResDir = TUNGSTENFORGE_RESOURCE_PATH;
+
+            fs::copy(tungstenResDir / "TungstenRuntime", outputIntDir / "Intermediate/TungstenRuntime", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+            fs::create_directory(outputIntDir / "Intermediate/TungstenRuntime/src/generated");
 
             fs::create_directory(outputIntDir / "Intermediate/build");
             fs::create_directory(outputBuildDir / "Build");
@@ -170,12 +174,12 @@ namespace wForge
 
             const std::array<std::pair<std::string_view, std::string_view>, 2> wRuntimeGeneratedProjectDefinesReplacements = {{
                 { "@TUNGSTEN_PROJECT_INCLUDE_PATH@", include },
-                { "@TUNGSTEN_PROJECT_INIT@", initCode },
+                { "@TUNGSTEN_PROJECT_INIT@", initCode }
             }};
 
-            RenderTemplateFile("res/Templates/TungstenProjectCMakeListsTemplate.txt", outputIntDir / "Intermediate/CMakeLists.txt", wProjectCMakeListsReplacements);
-            RenderTemplateFile("res/Templates/TungstenRuntimeCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenRuntime/CMakeLists.txt", wRuntimeMakeListsReplacements);
-            RenderTemplateFile("res/Templates/TungstenRuntimeProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenRuntime/src/generated/projectDefines.hpp", wRuntimeMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenProjectCMakeListsTemplate.txt", outputIntDir / "Intermediate/CMakeLists.txt", wProjectCMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenRuntime/CMakeLists.txt", wRuntimeMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenRuntime/src/generated/projectDefines.hpp", wRuntimeGeneratedProjectDefinesReplacements);
             return true;
         }
         catch (const fs::filesystem_error& e)

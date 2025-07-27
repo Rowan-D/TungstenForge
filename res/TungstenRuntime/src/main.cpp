@@ -1,4 +1,4 @@
-#include "TungstenCore.hpp"
+#include "TungstenCore/TungstenCore.hpp"
 #include "generated/projectDefines.hpp"
 #include TUNGSTEN_PROJECT_INCLUDE_PATH
 
