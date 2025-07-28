@@ -35,7 +35,7 @@ foreach(file IN LISTS files)
     if(DEFINED ENV{DESTDIR} AND NOT "$ENV{DESTDIR}" STREQUAL "")
         cmake_path(CONVERT "$ENV{DESTDIR}" TO_CMAKE_PATH_LIST DESTDIR_PATH NORMALIZE)
         string(REGEX REPLACE "/$" "" DESTDIR_PATH "${DESTDIR_PATH}")
-        set(_resolved_path "${DESTDIR_PATH}${file}")
+        set(_resolved_path "${DESTDIR_PATH}/${file}")
         # collapse accidental double slashes
         string(REGEX REPLACE "/+" "/" _resolved_path "${_resolved_path}")
 
