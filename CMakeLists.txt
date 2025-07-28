@@ -43,9 +43,19 @@ configure_file(
 )
 
 # Add Rapid YAML
-set(RYML_INSTALL OFF CACHE BOOL "Disable install target for rapidyaml")
+if(TUNGSTENFORGE_INSTALL_LIBRARY)
+    set(RYML_INSTALL ON CACHE BOOL "Disable install target for rapidyaml")
+else()
+    set(RYML_INSTALL OFF CACHE BOOL "Disable install target for rapidyaml")
+endif()
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/rapidlyaml)
+
 # Add TungstenUtils
+if(TUNGSTENFORGE_INSTALL_LIBRARY)
+    set(TUNGSTENUTILS_INSTALL_LIBRARY ON)
+else()
+    set(TUNGSTENUTILS_INSTALL_LIBRARY OFF)
+endif()
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/TungstenUtils)
 
 add_library(TungstenForge STATIC
@@ -71,7 +81,7 @@ set_target_properties(TungstenForge PROPERTIES
 )
 
 # Installation logic
-if(TUNGSTENFORGE_ENABLE_INSTALL)
+if(TUNGSTENFORGE_INSTALL_LIBRARY)
     install(TARGETS TungstenForge
             EXPORT TungstenForgeTargets
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
