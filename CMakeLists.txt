@@ -19,8 +19,6 @@ message(STATUS "TungstenForge version: ${PROJECT_VERSION}")
 
 option(TUNGSTENFORGE_INSTALL_LIBRARY "Install library, headers, and CMake config" OFF)
 option(TUNGSTENFORGE_INSTALL_RES "Install resource directory (wforge/res/)" ON)
-option(TUNGSTENFORGE_CLEAN_EMPTY_DIRS "Recursively clean up empty parent directories during uninstall" OFF)
-option(TUNGSTENFORGE_UNINSTALL_DRY_RUN "Show what would be removed, without removing anything" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
