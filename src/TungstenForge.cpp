@@ -12,6 +12,13 @@
 
 namespace wForge
 {
+    static constexpr std::size_t WorkspacePathVarIndex = static_cast<std::size_t>(Var::WorkspacePath);
+    static constexpr std::size_t ProjectPathVarIndex = static_cast<std::size_t>(Var::ProjectPath);
+    static constexpr std::size_t EngineDirVarIndex = static_cast<std::size_t>(Var::EngineDir);
+    static constexpr std::size_t IntDirVarIndex = static_cast<std::size_t>(Var::IntDir);
+    static constexpr std::size_t BuildDirVarIndex = static_cast<std::size_t>(Var::BuildDir);
+    static constexpr std::size_t VarCount = static_cast<std::size_t>(Var::COUNT);
+
     static bool RenderTemplateFile(const std::filesystem::path& templateFile, const std::filesystem::path& outputPath, std::span<const std::pair<std::string_view, std::string_view>> replacements)
     {
         std::optional<std::string> templateStr = wUtils::ReadFile(templateFile);
@@ -21,18 +28,37 @@ namespace wForge
         }
         for (const auto& [from, to] : replacements)
         {
-            W_DEBUG_LOG_INFO("{}", *templateStr);
-            W_DEBUG_LOG_INFO("from: {} to: {}", from, to);
             wUtils::FindAndReplaceAll(*templateStr, from, to);
         }
-        W_DEBUG_LOG_INFO("{}", *templateStr);
         return wUtils::WriteFile(outputPath, *templateStr);
     }
 
     TungstenForge::TungstenForge()
         : errorList()
     {
+        for (bool& varSet : m_varSet)
+        {
+            varSet = false;
+        }
+    }
 
+    std::optional<std::filesystem::path> TungstenForge::GetVar(Var type) const
+    {
+        W_ASSERT(type != Var::COUNT, "Var type cannot be set to Var::COUNT");
+        const std::size_t varIndex = static_cast<std::size_t>(type);
+        if (m_varSet[varIndex])
+        {
+            return m_vars[varIndex];
+        }
+        return std::nullopt;
+    }
+
+    void TungstenForge::SetVar(Var type, const std::filesystem::path& value)
+    {
+        W_ASSERT(type != Var::COUNT, "Var type cannot be set to Var::COUNT");
+        const std::size_t varIndex = static_cast<std::size_t>(type);
+        m_varSet[varIndex] = true;
+        m_vars[varIndex] = value;
     }
 
     std::optional<std::filesystem::path> TungstenForge::GetProjectFilePath(const std::filesystem::path& inputPath)
@@ -101,20 +127,27 @@ namespace wForge
         }
     }
 
-    bool TungstenForge::BuildProject(const std::filesystem::path& projectPath, const std::filesystem::path& tungstenCoreSourceDir, const std::filesystem::path& outputIntDir, const std::filesystem::path& outputBuildDir)
+    bool TungstenForge::SetupWorkspace()
+    {
+        return false;
+    }
+
+    bool TungstenForge::BuildProject()
     {
         namespace fs = std::filesystem;
 
         W_LOG_INFO(errorList, "Build called.");
 
-        W_LOG_INFO(errorList, "projectPath: {}", projectPath.string());
+        const fs::path tungstenCoreSourceDir = m_vars[EngineDirVarIndex] / "TungstenCore";
+
+        W_LOG_INFO(errorList, "projectPath: {}", m_vars[ProjectPathVarIndex].string());
         W_LOG_INFO(errorList, "wCoreSourceDir: {}", tungstenCoreSourceDir.string());
-        W_LOG_INFO(errorList, "intDir: {}", outputIntDir.string());
-        W_LOG_INFO(errorList, "buildDir: {}", outputBuildDir.string());
+        W_LOG_INFO(errorList, "intDir: {}", m_vars[IntDirVarIndex].string());
+        W_LOG_INFO(errorList, "buildDir: {}", m_vars[BuildDirVarIndex].string());
 
         try
         {
-            const std::optional<fs::path> projectFilePath = GetProjectFilePath(projectPath);
+            const std::optional<fs::path> projectFilePath = GetProjectFilePath(m_vars[ProjectPathVarIndex]);
             if (!projectFilePath)
             {
                 W_LOG_ERROR(errorList, "Could not get project file path!");
@@ -145,15 +178,18 @@ namespace wForge
             const std::string_view executableName = projectName;
             const std::string executableTargetName = fmt::format("{}Runtime", executableName);
 
-            fs::create_directory(outputIntDir / "Intermediate");
+            fs::create_directory(m_vars[IntDirVarIndex]);
 
             const std::filesystem::path tungstenResDir = TUNGSTENFORGE_RESOURCE_PATH;
 
-            fs::copy(tungstenResDir / "TungstenRuntime", outputIntDir / "Intermediate/TungstenRuntime", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
-            fs::create_directory(outputIntDir / "Intermediate/TungstenRuntime/src/generated");
+            fs::copy(tungstenResDir / "TungstenReflect", m_vars[IntDirVarIndex] / "TungstenReflect", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+            fs::create_directory(m_vars[IntDirVarIndex] / "TungstenReflect/src/generated");
 
-            fs::create_directory(outputIntDir / "Intermediate/build");
-            fs::create_directory(outputBuildDir / "Build");
+            fs::copy(tungstenResDir / "TungstenRuntime", m_vars[IntDirVarIndex] / "TungstenRuntime", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+            fs::create_directory(m_vars[IntDirVarIndex] / "TungstenRuntime/src/generated");
+
+            fs::create_directory(m_vars[IntDirVarIndex] / "build");
+            fs::create_directory(m_vars[BuildDirVarIndex]);
 
             const fs::path projectDir = projectFilePath->parent_path();
             const std::string projectDirStr = fs::weakly_canonical(projectDir).string();
@@ -181,11 +217,11 @@ namespace wForge
                 { "@EXECUTABLE_NAME@", executableName }
             }};
 
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenProjectCMakeListsTemplate.txt", outputIntDir / "Intermediate/CMakeLists.txt", wProjectCMakeListsReplacements);
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenReflect/CMakeLists.txt", wReflectCMakeListsReplacements);
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenReflect/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenRuntime/CMakeLists.txt", wRuntimeCMakeListsReplacements);
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenRuntime/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenProjectCMakeListsTemplate.txt", m_vars[IntDirVarIndex] / "CMakeLists.txt", wProjectCMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectCMakeListsTemplate.txt", m_vars[IntDirVarIndex] / "TungstenReflect/CMakeLists.txt", wReflectCMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectProjectDefines.in.hpp", m_vars[IntDirVarIndex] / "TungstenReflect/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeCMakeListsTemplate.txt", m_vars[IntDirVarIndex] / "TungstenRuntime/CMakeLists.txt", wRuntimeCMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeProjectDefines.in.hpp", m_vars[IntDirVarIndex] / "TungstenRuntime/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
             return true;
         }
         catch (const fs::filesystem_error& e)
