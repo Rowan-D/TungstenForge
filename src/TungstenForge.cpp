@@ -166,20 +166,26 @@ namespace wForge
                 { "@TUNGSTEN_PROJECT_BINARY_DIR@", tungstenProjectBinaryDir }
             }};
 
-            const std::array<std::pair<std::string_view, std::string_view>, 3> wRuntimeMakeListsReplacements = {{
+            const std::array<std::pair<std::string_view, std::string_view>, 3> wReflectCMakeListsReplacements = {{
+                { "@PROJECT_NAME@", projectName },
+            }};
+
+            const std::array<std::pair<std::string_view, std::string_view>, 2> wReflectAndRuntimeGeneratedProjectDefinesReplacements = {{
+                { "@TUNGSTEN_PROJECT_INCLUDE_PATH@", include },
+                { "@TUNGSTEN_PROJECT_INIT@", initCode }
+            }};
+
+            const std::array<std::pair<std::string_view, std::string_view>, 3> wRuntimeCMakeListsReplacements = {{
                 { "@PROJECT_NAME@", projectName },
                 { "@EXECUTABLE_TARGET_NAME@", executableTargetName },
                 { "@EXECUTABLE_NAME@", executableName }
             }};
 
-            const std::array<std::pair<std::string_view, std::string_view>, 2> wRuntimeGeneratedProjectDefinesReplacements = {{
-                { "@TUNGSTEN_PROJECT_INCLUDE_PATH@", include },
-                { "@TUNGSTEN_PROJECT_INIT@", initCode }
-            }};
-
             RenderTemplateFile(tungstenResDir / "Templates/TungstenProjectCMakeListsTemplate.txt", outputIntDir / "Intermediate/CMakeLists.txt", wProjectCMakeListsReplacements);
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenRuntime/CMakeLists.txt", wRuntimeMakeListsReplacements);
-            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenRuntime/src/generated/projectDefines.hpp", wRuntimeGeneratedProjectDefinesReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenReflect/CMakeLists.txt", wReflectCMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenReflect/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeCMakeListsTemplate.txt", outputIntDir / "Intermediate/TungstenRuntime/CMakeLists.txt", wRuntimeCMakeListsReplacements);
+            RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeProjectDefines.in.hpp", outputIntDir / "Intermediate/TungstenRuntime/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
             return true;
         }
         catch (const fs::filesystem_error& e)

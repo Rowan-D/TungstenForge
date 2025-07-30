@@ -1,17 +1,16 @@
 cmake_minimum_required(VERSION 3.14)
-project(TungstenRuntime LANGUAGES CXX)
+project(TungstenReflect LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
-add_executable(@EXECUTABLE_TARGET_NAME@
+add_executable(TungstenReflect
     src/generated/projectDefines.hpp
     src/main.cpp
 )
 
 target_compile_features(TungstenForgeCLI PUBLIC cxx_std_20)
 
-target_link_libraries(@EXECUTABLE_TARGET_NAME@ PRIVATE @PROJECT_NAME@)
+target_link_libraries(TungstenReflect PRIVATE @PROJECT_NAME@)
 
-set_target_properties(@EXECUTABLE_TARGET_NAME@ PROPERTIES OUTPUT_NAME "@EXECUTABLE_NAME@")

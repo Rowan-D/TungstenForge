@@ -5,4 +5,5 @@ project(TungstenProject LANGUAGES CXX)
 # Add projects
 add_subdirectory(@TUNGSTEN_CORE_SOURCE_DIR@ ${CMAKE_BINARY_DIR}/TungstenCore)
 add_subdirectory(@TUNGSTEN_PROJECT_SOURCE_DIR@ @TUNGSTEN_PROJECT_BINARY_DIR@)
+add_subdirectory(TungstenReflect)
 add_subdirectory(TungstenRuntime)
