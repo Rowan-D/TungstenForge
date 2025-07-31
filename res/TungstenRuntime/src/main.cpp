@@ -5,6 +5,6 @@
 int main()
 {
     wCore::Application app;
-    TUNGSTEN_PROJECT_INIT(app.GetComponentManager());
+    TUNGSTEN_PROJECT_INIT(app.GetComponentSystem().GetComponentSetup());
     return app.Run().exitCode;
 }
