@@ -1,5 +1,6 @@
 #include <array>
 #include <span>
+#include <cstdlib>
 
 #include <ryml.hpp>
 #include <ryml_std.hpp>
@@ -176,7 +177,7 @@ namespace wForge
             const std::string_view include(includeVal.str, includeVal.len);
             const std::string_view initCode(initCodeVal.str, initCodeVal.len);
             const std::string_view executableName = projectName;
-            const std::string executableTargetName = fmt::format("{}Runtime", executableName);
+            const std::string executableTargetName = std::string(executableName) + "Runtime";
 
             fs::create_directory(m_vars[IntDirVarIndex]);
 
@@ -188,8 +189,6 @@ namespace wForge
             fs::copy(tungstenResDir / "TungstenRuntime", m_vars[IntDirVarIndex] / "TungstenRuntime", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
             fs::create_directory(m_vars[IntDirVarIndex] / "TungstenRuntime/src/generated");
 
-            fs::create_directory(m_vars[IntDirVarIndex] / "build");
-            fs::create_directory(m_vars[BuildDirVarIndex]);
 
             const fs::path projectDir = projectFilePath->parent_path();
             const std::string projectDirStr = fs::weakly_canonical(projectDir).string();
@@ -222,6 +221,39 @@ namespace wForge
             RenderTemplateFile(tungstenResDir / "Templates/TungstenReflectProjectDefines.in.hpp", m_vars[IntDirVarIndex] / "TungstenReflect/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
             RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeCMakeListsTemplate.txt", m_vars[IntDirVarIndex] / "TungstenRuntime/CMakeLists.txt", wRuntimeCMakeListsReplacements);
             RenderTemplateFile(tungstenResDir / "Templates/TungstenRuntimeProjectDefines.in.hpp", m_vars[IntDirVarIndex] / "TungstenRuntime/src/generated/projectDefines.hpp", wReflectAndRuntimeGeneratedProjectDefinesReplacements);
+
+            const fs::path buildDir = fs::absolute(m_vars[IntDirVarIndex] / "build");
+            fs::create_directory(buildDir);
+            const std::string buildDirStr = buildDir.string();
+
+            W_LOG_INFO(errorList, "Configuring CMake project");
+            if (std::system(fmt::format("cmake -S \"{}\" -B \"{}\"", fs::absolute(m_vars[IntDirVarIndex]).string(), buildDirStr).c_str()))
+            {
+                W_LOG_ERROR(errorList, "CMake configuration failed.");
+                return false;
+            }
+
+            W_LOG_INFO(errorList, "Building project");
+            if (std::system(fmt::format("cmake --build \"{}\"", buildDirStr).c_str()))
+            {
+                W_LOG_ERROR(errorList, "Build failed.");
+                return false;
+            }
+
+            const std::string wReflectPathStr = fs::absolute(buildDir / "TungstenReflect/TungstenReflect").string();
+            const std::string wReflectOutputPathStr = fs::absolute(m_vars[IntDirVarIndex] / "ComponentTypes.txt").string();
+
+            W_LOG_INFO(errorList, "Running TungstenReflect");
+            if (std::system(fmt::format("\"{}\" -o \"{}\"", wReflectPathStr, wReflectOutputPathStr).c_str()))
+            {
+                W_LOG_ERROR(errorList, "TungstenReflect failed.");
+                return false;
+            }
+
+            fs::create_directory(m_vars[BuildDirVarIndex]);
+            fs::copy_file(buildDir / "TungstenRuntime" / executableName, m_vars[BuildDirVarIndex] / executableName, fs::copy_options::overwrite_existing);
+            W_LOG_INFO(errorList, "Copied final binary to distribution folder.");
+
             return true;
         }
         catch (const fs::filesystem_error& e)
