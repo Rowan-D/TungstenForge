@@ -29,9 +29,9 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    for (wIndex id = wCore::ComponentSetup::IDStart; id <= componentSetup.GetComponentTypeCount(); ++id)
+    for (wIndex componentTypeIndex = wCore::ComponentTypeIndexStart; componentTypeIndex <= componentSetup.GetComponentTypeCount(); ++componentTypeIndex)
     {
-        out << componentSetup.GetComponentTypeNameFromID(id) << '\n';
+        out << componentSetup.GetComponentTypeNameFromTypeIndex(componentTypeIndex) << '\n';
     }
 
     if (!out)

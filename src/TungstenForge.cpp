@@ -254,6 +254,8 @@ namespace wForge
             fs::copy_file(buildDir / "TungstenRuntime" / executableName, m_vars[BuildDirVarIndex] / executableName, fs::copy_options::overwrite_existing);
             W_LOG_INFO(errorList, "Copied final binary to distribution folder.");
 
+            
+
             return true;
         }
         catch (const fs::filesystem_error& e)
