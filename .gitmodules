@@ -1,0 +1,9 @@
+[submodule "TungstenForge/external/rapidlyaml"]
+	path = TungstenForge/external/rapidlyaml
+	url = https://github.com/biojppm/rapidyaml.git
+[submodule "TungstenForge/external/TungstenUtils"]
+	path = TungstenForge/external/TungstenUtils
+	url = https://github.com/Rowan-D/TungstenUtils.git
+[submodule "TungstenForgeCLI/external/CLI11"]
+	path = TungstenForgeCLI/external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
