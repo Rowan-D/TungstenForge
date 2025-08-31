@@ -1,0 +1,139 @@
+
+set(manifest_path "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt")
+message(STATUS "Using install manifest: ${manifest_path}")
+
+if(NOT EXISTS "${manifest_path}")
+    message(FATAL_ERROR "Uninstall failed: '${manifest_path}' not found. Run install first.")
+endif()
+
+if(NOT DEFINED CMAKE_INSTALL_PREFIX)
+    set(CMAKE_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
+endif()
+
+file(READ "${manifest_path}" files_raw)
+string(REGEX REPLACE "\r?\n" ";" files "${files_raw}")
+
+set(success_count 0)
+set(fail_count 0)
+
+function(path_has_prefix prefix path outvar)
+    if("${prefix}" STREQUAL "" OR "${path}" STREQUAL "")
+        set(${outvar} FALSE PARENT_SCOPE)
+        return()
+    endif()
+
+    file(TO_CMAKE_PATH "${prefix}" _p)
+    file(TO_CMAKE_PATH "${path}"   _q)
+    if(NOT _p STREQUAL "/")
+        string(REGEX REPLACE "/+$" "" _p "${_p}")
+    endif()
+    if(NOT _q STREQUAL "/")
+        string(REGEX REPLACE "/+$" "" _q "${_q}")
+    endif()
+    if(WIN32)
+        string(TOLOWER "${_p}" _p)
+        string(TOLOWER "${_q}" _q)
+    endif()
+
+    string(LENGTH "${_p}" _plen)
+    string(LENGTH "${_q}" _qlen)
+    if(_qlen LESS _plen)
+        set(${outvar} FALSE PARENT_SCOPE)
+        return()
+    endif()
+
+    string(SUBSTRING "${_q}" 0 ${_plen} _head)
+    if(NOT _head STREQUAL "${_p}")
+        set(${outvar} FALSE PARENT_SCOPE)
+        return()
+    endif()
+
+    if(_qlen EQUAL _plen)
+        set(${outvar} TRUE PARENT_SCOPE)
+    else()
+        string(SUBSTRING "${_q}" ${_plen} 1 _sep)
+        if(_sep STREQUAL "/")
+            set(${outvar} TRUE PARENT_SCOPE)
+        else()
+            set(${outvar} FALSE PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
+function(resolve_destdir_path input_path output_var)
+    set(_resolved "${input_path}")
+
+    if(DEFINED ENV{DESTDIR} AND NOT "$ENV{DESTDIR}" STREQUAL "")
+        file(TO_CMAKE_PATH "$ENV{DESTDIR}" _dest)
+        string(REGEX REPLACE "/+$" "" _dest "${_dest}")
+
+        # Avoid double prefix if manifest already lives under DESTDIR
+        path_has_prefix("${_dest}" "${_resolved}" _already)
+        if(NOT _already)
+            if("${_resolved}" MATCHES "^/")
+                set(_resolved "${_dest}${_resolved}")
+            else()
+                set(_resolved "${_dest}/${_resolved}")
+            endif()
+            # collapse accidental '//' joins
+            string(REGEX REPLACE "/+" "/" _resolved "${_resolved}")
+        endif()
+    endif()
+
+    if(NOT IS_ABSOLUTE "${_resolved}")
+        message(WARNING "Resolved uninstall path is not absolute: ${_resolved}")
+    endif()
+
+    set(${output_var} "${_resolved}" PARENT_SCOPE)
+endfunction()
+
+set(full_paths "")
+foreach(file IN LISTS files)
+    string(STRIP "${file}" file)
+    if(file STREQUAL "")
+        continue()
+    endif()
+
+    resolve_destdir_path("${file}" resolved)
+    list(APPEND full_paths "${resolved}")
+endforeach()
+
+list(REMOVE_DUPLICATES full_paths)
+
+foreach(full_path IN LISTS full_paths)
+    if(IS_SYMLINK "${full_path}")
+        message(STATUS "Removing symlink: ${full_path}")
+    elseif(EXISTS "${full_path}")
+        message(STATUS "Removing file: ${full_path}")
+    else()
+        message(STATUS "Already removed or missing: ${full_path}")
+        continue()
+    endif()
+
+    file(REMOVE "${full_path}")
+    if(EXISTS "${full_path}" OR IS_SYMLINK "${full_path}")
+        message(SEND_ERROR "Failed to remove: ${full_path}")
+        math(EXPR fail_count "${fail_count} + 1")
+    else()
+        math(EXPR success_count "${success_count} + 1")
+    endif()
+endforeach()
+
+# Remove "wforge" symlink
+resolve_destdir_path("@CMAKE_INSTALL_FULL_BINDIR@/wforge" symlink_path)
+
+if(IS_SYMLINK "${symlink_path}" OR EXISTS "${symlink_path}")
+    message(STATUS "Removing symlink: ${symlink_path}")
+
+    file(REMOVE "${symlink_path}")
+    if(IS_SYMLINK "${symlink_path}" OR EXISTS "${symlink_path}")
+        message(SEND_ERROR "Failed to remove symlink: ${symlink_path}")
+        math(EXPR fail_count "${fail_count} + 1")
+    else()
+        math(EXPR success_count "${success_count} + 1")
+    endif()
+else()
+    message(STATUS "Already removed or missing symlink: ${symlink_path}")
+endif()
+
+message(STATUS "Uninstall process completed: ${success_count} removed, ${fail_count} failed.")
