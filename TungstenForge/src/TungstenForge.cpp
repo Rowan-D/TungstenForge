@@ -172,10 +172,10 @@ namespace wForge
 
             const c4::csubstr projectNameVal = root["projectName"].val();
             const c4::csubstr includeVal = root["include"].val();
-            const c4::csubstr initCodeVal = root["initCode"].val();
+            const c4::csubstr componentListVal = root["componentList"].val();
             const std::string_view projectName(projectNameVal.str, projectNameVal.len);
             const std::string_view include(includeVal.str, includeVal.len);
-            const std::string_view initCode(initCodeVal.str, initCodeVal.len);
+            const std::string_view omponentList(componentListVal.str, componentListVal.len);
             const std::string_view executableName = projectName;
             const std::string executableTargetName = std::string(executableName) + "Runtime";
 
@@ -207,7 +207,7 @@ namespace wForge
 
             const std::array<std::pair<std::string_view, std::string_view>, 2> wReflectAndRuntimeGeneratedProjectDefinesReplacements = {{
                 { "@TUNGSTEN_PROJECT_INCLUDE_PATH@", include },
-                { "@TUNGSTEN_PROJECT_INIT@", initCode }
+                { "@TUNGSTEN_PROJECT_COMPONENT_LIST@", omponentList }
             }};
 
             const std::array<std::pair<std::string_view, std::string_view>, 3> wRuntimeCMakeListsReplacements = {{

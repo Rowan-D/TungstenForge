@@ -2,44 +2,19 @@
 #include "generated/projectDefines.hpp"
 #include TUNGSTEN_PROJECT_INCLUDE_PATH
 
-#include <filesystem>
-#include <fstream>
-
-int main(int argc, char** argv)
+template <typename... Cs>
+constexpr auto ComponentNames(wCore::ComponentList<Cs...>)
 {
-    wUtils::TungstenLogger errorList;
-    std::filesystem::path outputPath = "ComponentTypes.txt";
+    return std::array<std::string_view, sizeof...(Cs)>{ Cs::NameView... };
+}
 
-    for (int argIndex = 1; argIndex < argc - 1; ++argIndex) {
-        if (std::string_view(argv[argIndex]) == "-o") {
-            outputPath = argv[argIndex + 1];
-            break;
-        }
-    }
+constexpr auto Names = ComponentNames(TUNGSTEN_PROJECT_COMPONENT_LIST{});
 
-    wCore::Application app;
-    wCore::ComponentSetup& componentSetup = app.GetComponentSystem().GetComponentSetup();
-    TUNGSTEN_PROJECT_INIT(componentSetup);
-
-    std::ofstream out(outputPath);
-
-    if (!out)
+int main()
+{
+    for (auto name : Names)
     {
-        W_LOG_ERROR(errorList, "Failed to open output file: {}", outputPath.string());
-        return 1;
+        std::cout << name << '\n';
     }
-
-    for (wIndex componentTypeIndex = wCore::ComponentTypeIndexStart; componentTypeIndex <= componentSetup.GetComponentTypeCount(); ++componentTypeIndex)
-    {
-        out << componentSetup.GetComponentTypeNameFromTypeIndex(componentTypeIndex) << '\n';
-    }
-
-    if (!out)
-    {
-        W_LOG_ERROR(errorList, "Failed while writing to output file: {}", outputPath.string());
-        return 1;
-    }
-
-    W_LOG_INFO(errorList, "Component Type List written to: {}", outputPath.string());
     return 0;
 }
